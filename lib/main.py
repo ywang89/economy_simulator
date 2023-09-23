@@ -11,6 +11,10 @@ class person:
         name,
         amt_cons_food_per_day,
         amt_cons_cloth_per_day,
+
+        amt_cons_fert_per_day,
+        amt_cons_leaf_per_day,
+
         amt_prod_food_per_day, 
         amt_prod_cloth_per_day,
         prices,
@@ -23,16 +27,27 @@ class person:
         '''
         self.name = name
 
+        # Natural resources
+        self.amt_fert = 9999
+        self.amt_leaf = 9999
+        # Goods and services
         self.amt_food = 10
         self.amt_cloth = 10
+        # Money
         self.money = 100
         
+        # Consumption config
         self.amt_cons_food_per_day = amt_cons_food_per_day
         self.amt_cons_cloth_per_day = amt_cons_cloth_per_day
         
+        # Production config
+        self.amt_cons_fert_per_day = amt_cons_fert_per_day
+        self.amt_cons_leaf_per_day = amt_cons_leaf_per_day
+
         self.amt_prod_food_per_day = amt_prod_food_per_day
         self.amt_prod_cloth_per_day = amt_prod_cloth_per_day
         
+        # Price
         self.prices = prices
 
     
@@ -50,16 +65,24 @@ class person:
 
 
     
-    def _produce_food(self):
-        self.amt_food = self.amt_food + self.amt_prod_food_per_day
+    def _produce_food(self, log_list):
+        if self.amt_fert >= self.amt_cons_fert_per_day:
+            self.amt_fert = self.amt_fert - self.amt_cons_fert_per_day
+            self.amt_food = self.amt_food + self.amt_prod_food_per_day
+        else:
+            log_list.append(self.name + ' doesn\'t have enough resource to produce.')
 
-    def _produce_cloth(self):
-        self.amt_cloth = self.amt_cloth + self.amt_prod_cloth_per_day
+    def _produce_cloth(self, log_list):
+        if self.amt_leaf >= self.amt_cons_leaf_per_day:
+            self.amt_leaf = self.amt_leaf - self.amt_cons_leaf_per_day
+            self.amt_cloth = self.amt_cloth + self.amt_prod_cloth_per_day
+        else:
+            log_list.append(self.name + ' doesn\'t have enough resource to produce.')
         
     def _get_prod_func(self):
         self.prod_funcs = [self._produce_food, self._produce_cloth]
         
-    def produce_goods(self): 
+    def produce_goods(self, log_list): 
         '''
         Produce goods, more likely to produce goods that person is good at.
         '''
@@ -68,7 +91,7 @@ class person:
             goods = pd.Series({'food': 0, 'cloth': 1})
         elif self.amt_food == 0:
             goods = pd.Series({'food': 1, 'cloth': 0})
-        # Common case
+        # Common case, produce something you are good at
         else:
             goods = pd.Series({
                 'food': self.amt_prod_food_per_day,
@@ -82,7 +105,7 @@ class person:
         rand_num = np.random.random()
         for prod_func, cp in zip(self.prod_funcs, cumulative_p):
             if rand_num < cp:
-                prod_func()
+                prod_func(log_list)
                 break
         
     def trade(self, other, prices, log_list):
@@ -155,8 +178,10 @@ class person:
         '''
         Calculates total money value.
         '''
-        wealth = prices['food'] * self.amt_food + prices['cloth'] * self.amt_cloth + \
-            self.money
+        wealth = self.money + \
+            prices['food'] * self.amt_food + prices['cloth'] * self.amt_cloth + \
+            prices['fert'] * self.amt_fert + prices['leaf'] * self.amt_leaf
+            
         self.wealth = wealth
 
 
@@ -186,6 +211,9 @@ class economy:
             name = 'farmer',
             amt_cons_food_per_day = 1,
             amt_cons_cloth_per_day = 1,
+
+            amt_cons_fert_per_day=10,
+            amt_cons_leaf_per_day=10,
             amt_prod_food_per_day = 4, 
             amt_prod_cloth_per_day = 2,
             prices = prices
@@ -195,6 +223,8 @@ class economy:
             name = 'carpenter',
             amt_cons_food_per_day = 1,
             amt_cons_cloth_per_day = 1,
+            amt_cons_fert_per_day=10,
+            amt_cons_leaf_per_day=10,
             amt_prod_food_per_day = 2, 
             amt_prod_cloth_per_day = 4,
             prices = prices
@@ -202,11 +232,13 @@ class economy:
         
     def log_amounts(self, log_list):
         log_list.append(
-            "Farmer: Food: {0}, Cloth: {1}, Money: {2}".format(
+            "Farmer: Fert: {0}, Leaf{1}, Food: {2}, Cloth: {3}, Money: {4}".format(
+                self.farmer.amt_fert, self.farmer.amt_leaf, 
                 self.farmer.amt_food, self.farmer.amt_cloth, self.farmer.money
         ))
         log_list.append(
-            "Carpenter: Food: {0}, Cloth: {1}, Money: {2}".format(
+            "Carpenter: Fert: {0}, Leaf{1}, Food: {2}, Cloth: {3}, Money: {4}".format(
+                self.carpenter.amt_fert, self.carpenter.amt_leaf, 
                 self.carpenter.amt_food, self.carpenter.amt_cloth, self.carpenter.money
         ))
     
@@ -223,10 +255,10 @@ class economy:
             # Produce
             log_list.append(f'******\nProducing...')
             
-            self.farmer.produce_goods()
+            self.farmer.produce_goods(log_list)
             self.log_amounts(log_list)
             
-            self.carpenter.produce_goods()
+            self.carpenter.produce_goods(log_list)
             self.log_amounts(log_list)
             
             log_list.append(f'Produce done')
@@ -261,12 +293,16 @@ class economy:
             self.carpenter.calc_tot_wealth(self.prices)
             
             tot_amt_farmer[i] = {
+                'fert': self.farmer.amt_fert, 
+                'leaf': self.farmer.amt_leaf, 
                 'food': self.farmer.amt_food, 
                 'cloth': self.farmer.amt_cloth,
                 'money': self.farmer.money,
                 'wealth': self.farmer.wealth
             }
             tot_amt_carpenter[i] = {
+                'fert': self.carpenter.amt_fert, 
+                'leaf': self.carpenter.amt_leaf, 
                 'food': self.carpenter.amt_food, 
                 'cloth': self.carpenter.amt_cloth,
                 'money': self.carpenter.money,

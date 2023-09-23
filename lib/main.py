@@ -28,13 +28,13 @@ class person:
         self.name = name
 
         # Natural resources
-        self.amt_fert = 9999
-        self.amt_leaf = 9999
+        self.amt_fert = 99999
+        self.amt_leaf = 99999
         # Goods and services
         self.amt_food = 10
         self.amt_cloth = 10
-        # Money
-        self.money = 100
+        # gold
+        self.gold = 100
         
         # Consumption config
         self.amt_cons_food_per_day = amt_cons_food_per_day
@@ -52,7 +52,7 @@ class person:
 
     
     
-    def consume(self):
+    def consume(self, log_list):
         if self.amt_food >= self.amt_cons_food_per_day:
             self.amt_food = self.amt_food - self.amt_cons_food_per_day
         else:
@@ -62,6 +62,8 @@ class person:
             self.amt_cloth = self.amt_cloth - self.amt_cons_cloth_per_day
         else:
             raise Exception('No cloth to consume')
+        
+        log_list.append(f'{self.name} done.')
 
 
     
@@ -107,6 +109,8 @@ class person:
             if rand_num < cp:
                 prod_func(log_list)
                 break
+
+        log_list.append(f'{self.name} done.')
         
     def trade(self, other, prices, log_list):
         '''
@@ -147,9 +151,9 @@ class person:
         Buys 1 amount of food.
         '''
         if seller.amt_food > 1:         
-            if self.money > prices['food'] * 1:
-                self.money = self.money - 1 * prices['food']
-                seller.money = seller.money + 1 * prices['food']
+            if self.gold > prices['food'] * 1:
+                self.gold = self.gold - 1 * prices['food']
+                seller.gold = seller.gold + 1 * prices['food']
                 
                 self.amt_food = self.amt_food + 1
                 seller.amt_food = seller.amt_food - 1
@@ -163,9 +167,9 @@ class person:
         Buys 1 amount of cloth.
         '''
         if seller.amt_cloth > 1:
-            if self.money > prices['cloth'] * 1:
-                self.money = self.money - 1 * prices['cloth']
-                seller.money = seller.money + 1 * prices['cloth']
+            if self.gold > prices['cloth'] * 1:
+                self.gold = self.gold - 1 * prices['cloth']
+                seller.gold = seller.gold + 1 * prices['cloth']
                 
                 self.amt_cloth = self.amt_cloth + 1
                 seller.amt_cloth = seller.amt_cloth - 1
@@ -176,9 +180,9 @@ class person:
 
     def calc_tot_wealth(self, prices):
         '''
-        Calculates total money value.
+        Calculates total gold value.
         '''
-        wealth = self.money + \
+        wealth = self.gold + \
             prices['food'] * self.amt_food + prices['cloth'] * self.amt_cloth + \
             prices['fert'] * self.amt_fert + prices['leaf'] * self.amt_leaf
             
@@ -232,15 +236,16 @@ class economy:
         
     def log_amounts(self, log_list):
         log_list.append(
-            "Farmer: Fert: {0}, Leaf{1}, Food: {2}, Cloth: {3}, Money: {4}".format(
+            "Farmer: Fert: {0}, Leaf: {1}, Food: {2}, Cloth: {3}, gold: {4}".format(
                 self.farmer.amt_fert, self.farmer.amt_leaf, 
-                self.farmer.amt_food, self.farmer.amt_cloth, self.farmer.money
+                self.farmer.amt_food, self.farmer.amt_cloth, self.farmer.gold
         ))
         log_list.append(
-            "Carpenter: Fert: {0}, Leaf{1}, Food: {2}, Cloth: {3}, Money: {4}".format(
+            "Carpenter: Fert: {0}, Leaf: {1}, Food: {2}, Cloth: {3}, gold: {4}".format(
                 self.carpenter.amt_fert, self.carpenter.amt_leaf, 
-                self.carpenter.amt_food, self.carpenter.amt_cloth, self.carpenter.money
+                self.carpenter.amt_food, self.carpenter.amt_cloth, self.carpenter.gold
         ))
+        log_list.append(f'++++++')
     
     
     def run_economy(self, log_file='log_file'):
@@ -253,7 +258,7 @@ class economy:
             self.log_amounts(log_list)
             
             # Produce
-            log_list.append(f'******\nProducing...')
+            log_list.append(f'*********\nProducing...')
             
             self.farmer.produce_goods(log_list)
             self.log_amounts(log_list)
@@ -267,7 +272,7 @@ class economy:
             if self.policy == 'No trading':
                 pass
             else:
-                log_list.append(f'******\nTrading...')
+                log_list.append(f'*********\nTrading...')
                 
                 self.farmer.trade(self.carpenter, self.prices, log_list)
                 self.log_amounts(log_list)
@@ -278,12 +283,12 @@ class economy:
                 log_list.append(f'Trade done')
             
             # Consume
-            log_list.append(f'******\nConsuming...')
+            log_list.append(f'*********\nConsuming...')
 
-            self.farmer.consume()
+            self.farmer.consume(log_list)
             self.log_amounts(log_list)
             
-            self.carpenter.consume()
+            self.carpenter.consume(log_list)
             self.log_amounts(log_list)
             
             log_list.append(f'Consume done')            
@@ -297,7 +302,7 @@ class economy:
                 'leaf': self.farmer.amt_leaf, 
                 'food': self.farmer.amt_food, 
                 'cloth': self.farmer.amt_cloth,
-                'money': self.farmer.money,
+                'gold': self.farmer.gold,
                 'wealth': self.farmer.wealth
             }
             tot_amt_carpenter[i] = {
@@ -305,7 +310,7 @@ class economy:
                 'leaf': self.carpenter.amt_leaf, 
                 'food': self.carpenter.amt_food, 
                 'cloth': self.carpenter.amt_cloth,
-                'money': self.carpenter.money,
+                'gold': self.carpenter.gold,
                 'wealth': self.carpenter.wealth
             }
 

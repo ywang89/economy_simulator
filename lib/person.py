@@ -4,20 +4,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+
 # Define `person`
-class person:
+class Person:
     def __init__(
         self,
-        name,
-        amt_cons_food_per_day,
-        amt_cons_cloth_per_day,
-
-        amt_cons_fert_per_day,
-        amt_cons_leaf_per_day,
-
-        amt_prod_food_per_day, 
-        amt_prod_cloth_per_day,
-        prices,
+        name = None,
+        occupation = None,
+        prices = {},
+        amt_cons_food_per_day = None,
+        amt_cons_cloth_per_day =None,
+        amt_cons_fert_per_day = None,
+        amt_cons_leaf_per_day = None,
+        amt_prod_food_per_day = None, 
+        amt_prod_cloth_per_day = None,
     ):  
         '''
         Parameters
@@ -25,8 +25,6 @@ class person:
         prices: dict
             Prices of each good
         '''
-        self.name = name
-
         # Natural resources
         self.amt_fert = 99999
         self.amt_leaf = 99999
@@ -35,6 +33,10 @@ class person:
         self.amt_cloth = 10
         # gold
         self.gold = 100
+
+        # Basic info
+        self.name = name
+        self.occupation = occupation
         
         # Consumption config
         self.amt_cons_food_per_day = amt_cons_food_per_day
@@ -50,6 +52,17 @@ class person:
         # Price
         self.prices = prices
 
+    def gen_name(self):
+        if self.name != None:
+            raise Exception('`name` already exists.')
+
+        adjectives = ['Happy', 'Cheerful', 'Dilligent', 'Busy']
+        names = ['Joe', 'Agnes', 'Mary', 'Charlie']
+
+        n1 = np.random.choice(adjectives)
+        n2 = np.random.choice(names)
+
+        return ' '.join([n1, n2])
     
     
     def consume(self, log_list):
@@ -65,8 +78,7 @@ class person:
         
         log_list.append(f'{self.name} done.')
 
-
-    
+    # Production
     def _produce_food(self, log_list):
         if self.amt_fert >= self.amt_cons_fert_per_day:
             self.amt_fert = self.amt_fert - self.amt_cons_fert_per_day
@@ -80,7 +92,7 @@ class person:
             self.amt_cloth = self.amt_cloth + self.amt_prod_cloth_per_day
         else:
             log_list.append(self.name + ' doesn\'t have enough resource to produce.')
-        
+
     def _get_prod_func(self):
         self.prod_funcs = [self._produce_food, self._produce_cloth]
         
@@ -129,7 +141,7 @@ class person:
             p['no_trade'] = 0
             p['b_f'] = 0
         else:
-            p['no_trade'] = 0.1 # 10% a person simply doesn't want to trade
+            p['no_trade'] = 0.1 # 10% chance a person simply doesn't want to trade
             p_trade = 1 - p['no_trade']
             p['b_f'] = p_trade * (1 - self.amt_food / (self.amt_cloth + self.amt_food))
         p['b_c'] =  1 - p['no_trade'] - p['b_f']
@@ -189,149 +201,21 @@ class person:
         self.wealth = wealth
 
 
-# Define `economy`
-class economy:
-    
-    def __init__(
-        self,
-        run_days=20,
-        prices={},
-        policy='',
-        # **kwargs, include list of persons
-    ):
-        '''
-        Parameters
-        ----------
-        run_days: int
-            Number of days to run the economy.
-        '''
-        self.run_days = np.arange(0, run_days, step=1)
-        self.log = ''
-        self.prices = prices
-        self.policy = policy
-        
-        # Define persons in economy
-        self.farmer = person(
-            name = 'farmer',
-            amt_cons_food_per_day = 1,
-            amt_cons_cloth_per_day = 1,
+class Farmer(Person):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.name = self.gen_name()
+        self.occupation = 'Farmer'
 
-            amt_cons_fert_per_day=10,
-            amt_cons_leaf_per_day=10,
-            amt_prod_food_per_day = 4, 
-            amt_prod_cloth_per_day = 2,
-            prices = prices
-        )
 
-        self.carpenter = person(
-            name = 'carpenter',
-            amt_cons_food_per_day = 1,
-            amt_cons_cloth_per_day = 1,
-            amt_cons_fert_per_day=10,
-            amt_cons_leaf_per_day=10,
-            amt_prod_food_per_day = 2, 
-            amt_prod_cloth_per_day = 4,
-            prices = prices
-        )
-        
-    def log_amounts(self, log_list):
-        log_list.append(
-            "Farmer: Fert: {0}, Leaf: {1}, Food: {2}, Cloth: {3}, gold: {4}".format(
-                self.farmer.amt_fert, self.farmer.amt_leaf, 
-                self.farmer.amt_food, self.farmer.amt_cloth, self.farmer.gold
-        ))
-        log_list.append(
-            "Carpenter: Fert: {0}, Leaf: {1}, Food: {2}, Cloth: {3}, gold: {4}".format(
-                self.carpenter.amt_fert, self.carpenter.amt_leaf, 
-                self.carpenter.amt_food, self.carpenter.amt_cloth, self.carpenter.gold
-        ))
-        log_list.append(f'++++++')
-    
-    
-    def run_economy(self, log_file='log_file'):
-        tot_amt_farmer = {}
-        tot_amt_carpenter = {}
-        log_list = []
-        for i in self.run_days:
-            log_list.append('Day ' + str(i) + ' starts')
-            
-            self.log_amounts(log_list)
-            
-            # Produce
-            log_list.append(f'*********\nProducing...')
-            
-            self.farmer.produce_goods(log_list)
-            self.log_amounts(log_list)
-            
-            self.carpenter.produce_goods(log_list)
-            self.log_amounts(log_list)
-            
-            log_list.append(f'Produce done')
-            
-            # Trade
-            if self.policy == 'No trading':
-                pass
-            else:
-                log_list.append(f'*********\nTrading...')
-                
-                self.farmer.trade(self.carpenter, self.prices, log_list)
-                self.log_amounts(log_list)
-                
-                self.carpenter.trade(self.farmer, self.prices, log_list)
-                self.log_amounts(log_list)
-                
-                log_list.append(f'Trade done')
-            
-            # Consume
-            log_list.append(f'*********\nConsuming...')
 
-            self.farmer.consume(log_list)
-            self.log_amounts(log_list)
-            
-            self.carpenter.consume(log_list)
-            self.log_amounts(log_list)
-            
-            log_list.append(f'Consume done')            
+        
+class Taylor(Person):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.name = self.gen_name()
+        self.occupation = 'Taylor'
 
-            # Bookkeeping
-            self.farmer.calc_tot_wealth(self.prices)
-            self.carpenter.calc_tot_wealth(self.prices)
-            
-            tot_amt_farmer[i] = {
-                'fert': self.farmer.amt_fert, 
-                'leaf': self.farmer.amt_leaf, 
-                'food': self.farmer.amt_food, 
-                'cloth': self.farmer.amt_cloth,
-                'gold': self.farmer.gold,
-                'wealth': self.farmer.wealth
-            }
-            tot_amt_carpenter[i] = {
-                'fert': self.carpenter.amt_fert, 
-                'leaf': self.carpenter.amt_leaf, 
-                'food': self.carpenter.amt_food, 
-                'cloth': self.carpenter.amt_cloth,
-                'gold': self.carpenter.gold,
-                'wealth': self.carpenter.wealth
-            }
 
-            log_list.append('Day ' + str(i) + ' ends')
-            log_list.append('-------------------------')
-                    
-        # total amount per person
-        df_tot_amt_farmer = pd.DataFrame.from_dict(tot_amt_farmer, orient='index')
-        df_tot_amt_carpenter = pd.DataFrame.from_dict(tot_amt_carpenter, orient='index')
+
         
-        # total wealth of economy
-        tot_wealth = (
-            df_tot_amt_farmer['wealth'] + df_tot_amt_carpenter['wealth']
-        )
-        
-        self.farmer.df_tot_amt = df_tot_amt_farmer
-        self.carpenter.df_tot_amt = df_tot_amt_carpenter
-        self.tot_wealth = tot_wealth
-        
-        # Logging
-        self.log = '\n'.join(log_list)
-        with open(f'logs/{log_file}.txt', "w") as file:
-            file.write(self.log)
-        print(f"Log saved to {log_file}.txt!")

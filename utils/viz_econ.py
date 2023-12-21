@@ -2,9 +2,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def _plot_econ_item(df_farmer, df_carpenter, item, ax):
+def _plot_econ_item(df_farmer, df_taylor, item, ax):
     ax.plot(item, data=df_farmer, label='farmer')
-    ax.plot(item, data=df_carpenter, label='carpenter')
+    ax.plot(item, data=df_taylor, label='taylor')
     ax.legend()
     ax.set_title(item)
 
@@ -19,7 +19,7 @@ def plot_econ(econ, figsize=(21, 6)):
             break
         _plot_econ_item(
             df_farmer=econ.farmer.df_tot_amt,
-            df_carpenter=econ.carpenter.df_tot_amt,
+            df_taylor=econ.taylor.df_tot_amt,
             item=item_list[i],
             ax=ax
         )

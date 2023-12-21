@@ -11,7 +11,6 @@ class Person:
         self,
         name = None,
         occupation = None,
-        prices = {},
         amt_cons_food_per_day = None,
         amt_cons_cloth_per_day =None,
         amt_cons_fert_per_day = None,
@@ -22,8 +21,6 @@ class Person:
         '''
         Parameters
         ----------
-        prices: dict
-            Prices of each good
         '''
         # Natural resources
         self.amt_fert = 99999
@@ -49,8 +46,6 @@ class Person:
         self.amt_prod_food_per_day = amt_prod_food_per_day
         self.amt_prod_cloth_per_day = amt_prod_cloth_per_day
         
-        # Price
-        self.prices = prices
 
     def gen_name(self):
         if self.name != None:
@@ -218,4 +213,45 @@ class Taylor(Person):
 
 
 
-        
+class Collector(Person):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.name = self.gen_name()
+        self.occupation = 'Collector'
+    
+    def _get_1_fert(self):
+        self.amt_fert = self.amt_fert + 1
+
+    def get_fert(self):
+        '''Can get a random number of fertilizer between 1 and 10
+        '''
+        amt = np.random.randint(1, 11)
+        self.amt_fert = self.amt_fert
+        return amt
+
+    def _get_1_leaf(self):
+        self.amt_leaf = self.amt_leaf + 1
+
+    def get_leaf(self):
+        '''Can get a random number of leaf between 1 and 10
+        '''
+        amt = np.random.randint(1, 11)
+        self.amt_leaf = self.amt_leaf + amt
+        return amt
+    
+    def get_resource(self, log_list):
+        choice = np.random.choice(['fert', 'leaf'])
+        get_func = getattr(self, 'get_' + choice)
+        amt = get_func()
+
+        log_list.append(f'{self.occupation}, {self.name}, collected {amt} of {choice}')
+
+    def sell_fert(self, x, prices):
+        '''x is the quantity'''
+        self.amt_fert = self.amt_fert - self.amt_fert * x
+        self.gold = self.gold + x * prices['fertilizer']
+
+    def sell_leaf(self, x, prices):
+        '''x is the quantity'''
+        self.amt_leaf = self.amt_leaf - self.amt_leaf * x
+        self.gold = self.gold + x * prices['leaf']

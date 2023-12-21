@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from .person import Farmer, Taylor
+from .person import Farmer, Taylor, Collector
 
 
 # Define `economy`
@@ -27,7 +27,11 @@ class economy:
         self.log = ''
         self.prices = prices
         self.policy = policy
-        
+
+        # Generate economy participants
+        self.gen_people()
+
+    def gen_people(self):
         # Define persons in economy
         self.farmer = Farmer(
             amt_cons_food_per_day = 1,
@@ -36,7 +40,6 @@ class economy:
             amt_cons_leaf_per_day=10,
             amt_prod_food_per_day = 4, 
             amt_prod_cloth_per_day = 2,
-            prices = prices
         )
 
         self.taylor = Taylor(
@@ -46,9 +49,18 @@ class economy:
             amt_cons_leaf_per_day=10,
             amt_prod_food_per_day = 2, 
             amt_prod_cloth_per_day = 4,
-            prices = prices
         )
-        
+
+        self.collector = Collector(
+            amt_cons_food_per_day = 1,
+            amt_cons_cloth_per_day = 1,
+            amt_cons_fert_per_day=10,
+            amt_cons_leaf_per_day=10,
+            amt_prod_food_per_day = 0, 
+            amt_prod_cloth_per_day = 0,
+        )
+
+    
     def log_amounts(self, log_list):
         log_list.append(
             "Farmer: Fert: {0}, Leaf: {1}, Food: {2}, Cloth: {3}, Gold: {4}".format(
@@ -71,9 +83,15 @@ class economy:
             log_list.append('Day ' + str(i) + ' starts')
             
             self.log_amounts(log_list)
+
+            # Collect natural resources
+            log_list.append(f'*********\nCollecting natural resources...')
+            self.collector.get_resource(log_list)
+
+            # Trade natural resources
             
-            # Produce
-            log_list.append(f'*********\nProducing...')
+            # Produce goods and services
+            log_list.append(f'*********\nProducing goods and services...')
             
             self.farmer.produce_goods(log_list)
             self.log_amounts(log_list)
@@ -83,7 +101,7 @@ class economy:
             
             log_list.append(f'Produce done')
             
-            # Trade
+            # Trade goods & services
             if self.policy == 'No trading':
                 pass
             else:

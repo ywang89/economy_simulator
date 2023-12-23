@@ -185,6 +185,42 @@ class Person:
         else:
             log_list.append('Seller ' + seller.name + ' doesn\'t have enough to sell.')
 
+    def buy_nr(self, qty, nr_name, seller, prices, log_list):
+        '''
+        Buy `qty` amount of fertilizer.
+
+        Parameters
+        ----------
+        qty: an integer
+        nr_name: str. Name of the natural resource.
+        seller: a `Person` or its child class object.
+        log_list: a list of str.
+        '''
+        seller_amt_fert_orig = getattr(seller, 'amt_fert')
+        buyer_amt_fert_orig = getattr(self, 'amt_fert')
+
+        if seller_amt_fert_orig > qty:
+            if self.gold > prices[nr_name] * qty:
+                trx_gold = qty * prices[nr_name]
+
+                self.gold = self.gold - trx_gold
+                seller.gold = seller.gold + trx_gold
+                
+                self.amt_fert = self.amt_fert + qty
+                seller.amt_fert = seller.amt_fert - qty
+
+                setattr(seller, 'amt_' + nr_name, seller_amt_fert_orig - qty)
+                setattr(self, 'amt_' + nr_name, buyer_amt_fert_orig + qty)
+                
+                log_list.append(f'{self.name} bought {qty} fert from {seller.name}')
+            else:
+                log_list.append(f'{self.name} doesn\t have enough gold to buy {qty} amount.')
+        else:
+            log_list.append(f'Seller {seller.name} doesn\'t have enough to sell.')
+
+
+
+    # Calc
     def calc_tot_wealth(self, prices):
         '''
         Calculates total gold value.
